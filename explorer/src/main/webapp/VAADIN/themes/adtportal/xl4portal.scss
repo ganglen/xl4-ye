@@ -1,0 +1,53 @@
+$v-app-loading-text: "Excelfore Yang Explorer";
+$v-background-color: #ffffff;
+$v-app-background-color: #e2e6ea;
+$v-focus-color: #3fbcec;
+$v-gradient: v-linear 3%;
+
+@import "../valo/valo.scss";
+
+@mixin adtportal {
+  @include valo;
+
+  .loginview {
+    background: unquote("linear-gradient(to right, #0a2135 250px, #ffffff 250px)");
+  }
+
+  .loginview .v-captiontext {
+    color: #858585;
+  }
+
+  .loginview label {
+    color: #858585;
+  }
+
+  .loginview .welcome {
+    color: #858585;
+    font-size: 60px;
+  }
+
+  .topbar {
+    background-color: #e2e6ea;
+    padding: 5px;
+    color: #858585;
+  }
+
+  .topbar .topbartitle {
+    font-size: 20px;
+  }
+
+  .v-image-xl4-logo {
+    width: 30px !important;
+    height: 25px !important;
+  }
+
+  .v-textarea-description-label {
+    background-color: #fafafb !important;
+    font-family: "Courier New", monospace !important;
+  }
+
+  .v-checkbox-data-switch-checkbox {
+    padding-right: 13px !important;
+  }
+
+}

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.cisco.stbarth.netconf</groupId>
+    <groupId>com.xl4.netconf</groupId>
     <artifactId>grpc</artifactId>
     <version>0.2-SNAPSHOT</version>
     <properties>
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>1.53.0</version>
+            <version>1.43.0</version>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

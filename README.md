@@ -1,5 +1,5 @@
-# Advanced NETCONF Explorer
-Advanced NETCONF explorer and NETCONF client library for Java
+# Excelfore Yang Explorer
+Excelfore Yang Explorer and NETCONF client library for Java
 
 This is a graphical explorer for YANG models supported by a NETCONF device or service orchestrator. Features include:
 * Retrieving all YANG models supported by a device or orchestrator using the NETCONF monitoring standard.
@@ -55,3 +55,7 @@ enabled device or orchestrator supporting NETCONF Monitoring [RFC 6022](https://
 ANC is the basis of the explorer and offers abstraction for most of the features of NETCONF.
 It is packaged as a maven artifact so it can be installed using `mvn install` in the `anc` directory. 
 
+## Modifications from the original Cisco Netconf Explorer
+The changes are mostly on the Frontend side only
+ - Removed unused views and components
+ - For data view, removed "keys" in the data tree and display it to beside the name of the parent node

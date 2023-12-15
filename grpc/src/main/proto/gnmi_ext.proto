@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 syntax = "proto3";
-option java_package = "com.cisco.stbarth.netconf.grpc";
+option java_package = "com.xl4.netconf.grpc";
 option java_outer_classname = "GNMIExt";
 
 // Package gnmi_ext defines a set of extensions messages which can be optionally
