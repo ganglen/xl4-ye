@@ -39,6 +39,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -741,7 +744,15 @@ public final class SalesView extends VerticalLayout implements View {
     NetconfYangParser yangParser = new NetconfYangParser();
     progressBar.setIndeterminate(false);
 
-    yangParser.setCacheDirectory(new File("..", "yangcache").toString());
+    Properties properties = new Properties();
+    try (InputStream input = new FileInputStream("/etc/excelforeyangexplorer.conf")) {
+      properties.load(input);
+      String yangcachePath = properties.getProperty("YANGCACHE_DIR", "/var/cache/jetty9/webapps/yangcache");
+      String filePath = new File(yangcachePath).toString();
+      yangParser.setCacheDirectory(filePath);
+    } catch (IOException ex) {
+      yangParser.setCacheDirectory(new File("..", "yangcache").toString());
+    }
 
     try (NetconfSession session = this.client.createSession()) {
       Map<String, String> schemas = yangParser.getAvailableSchemas(session);

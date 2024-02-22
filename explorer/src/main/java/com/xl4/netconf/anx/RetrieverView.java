@@ -34,11 +34,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * View for logging in, retrieving and parsing YANG models
@@ -238,8 +240,18 @@ public class RetrieverView extends VerticalLayout {
             ui.parser = new NetconfYangParser();
             progressBar.setIndeterminate(false);
 
-            if (cacheModels.getValue())
+            if (cacheModels.getValue()) {
+              Properties properties = new Properties();
+              try (InputStream input = new FileInputStream("/etc/excelforeyangexplorer.conf")) {
+                properties.load(input);
+                String yangcachePath = properties.getProperty("YANGCACHE_DIR", "/var/cache/jetty9/webapps/yangcache");
+                String filePath = new File(yangcachePath).toString();
+                ui.parser.setCacheDirectory(filePath);
+              } catch (IOException ex) {
                 ui.parser.setCacheDirectory(new File("..", "yangcache").toString());
+              }
+            }
+                
 
             try (NetconfSession session = ui.client.createSession()) {
                 Map<String, String> schemas = ui.parser.getAvailableSchemas(session);

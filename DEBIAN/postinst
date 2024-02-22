@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+# Create the yangcache directory and set permissions
+mkdir -p /usr/share/yangcache
+mkdir -p /var/cache/jetty9/webapps/yangcache
+chown jetty:jetty /var/cache/jetty9/webapps/yangcache
+chmod 755 /var/cache/jetty9/webapps/yangcache
+
+# Copy files
+cp -r /usr/share/excelfore-yang-explorer/explorer/target/*.war /var/lib/jetty9/webapps/ROOT.war
+cp -r /usr/share/excelfore-yang-explorer/anc/target/site/apidocs /var/lib/jetty9/webapps/
+
+# Remove existing directory if needed
+if [ -d "/var/lib/jetty9/webapps/root" ]; then
+    rm -rf /var/lib/jetty9/webapps/root
+fi
+
+# Create the configuration file
+echo "YANGCACHE_DIR=/var/cache/jetty9/webapps/yangcache" | tee /etc/excelforeyangexplorer.conf >/dev/null
+chmod 644 /etc/excelforeyangexplorer.conf
+
+exit 0
