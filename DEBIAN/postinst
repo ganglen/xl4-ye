@@ -20,4 +20,10 @@ fi
 echo "YANGCACHE_DIR=/var/cache/jetty9/webapps/yangcache" | tee /etc/excelforeyangexplorer.conf >/dev/null
 chmod 644 /etc/excelforeyangexplorer.conf
 
+# Update jetty service
+# Path to jetty.service file
+JETTY_SERVICE_FILE="/usr/share/jetty9/bin/jetty.service"
+sed -i '/^\[Service\]/a ReadWritePaths=/var/lib/jetty9/ /usr/share/yangcache/ /var/cache/jetty9/' "$JETTY_SERVICE_FILE"
+
 exit 0
+
