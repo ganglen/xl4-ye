@@ -20,10 +20,18 @@ fi
 echo "YANGCACHE_DIR=/var/cache/jetty9/webapps/yangcache" | tee /etc/excelforeyangexplorer.conf >/dev/null
 chmod 644 /etc/excelforeyangexplorer.conf
 
-# Update jetty service
-# Path to jetty.service file
+# Check if the line already exists in the file
 JETTY_SERVICE_FILE="/usr/share/jetty9/bin/jetty.service"
-sed -i '/^\[Service\]/a ReadWritePaths=/var/lib/jetty9/ /usr/share/yangcache/ /var/cache/jetty9/' "$JETTY_SERVICE_FILE"
+if ! grep -q 'ReadWritePaths=/var/lib/jetty9/ /var/cache/jetty9/' "$JETTY_SERVICE_FILE"; then
+    # If the line does not exist, add it
+    sed -i '/^\[Service\]/a ReadWritePaths=/var/lib/jetty9/ /var/cache/jetty9/' "$JETTY_SERVICE_FILE"
+fi
+
+# Jetty9 Service Update
+sed -i '/^ReadWritePaths=.*\/var\/lib\/jetty9\/.*$/ { /\/var\/cache\/jetty9/! s/.*/&,\/var\/cache\/jetty9/ } ; /^# Security/ { N; s/\n\(.*\)\(ReadWritePaths=.*\/var\/lib\/jetty9\/.*\)/\n\1\2\n\1ReadWritePaths=\/var\/lib\/jetty9\/ \/var\/cache\/jetty9/ }' /usr/lib/systemd/system/jetty9.service
+
+# Reload systemd daemon
+systemctl daemon-reload
 
 exit 0
 
