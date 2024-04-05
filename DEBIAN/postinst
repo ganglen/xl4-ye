@@ -27,7 +27,7 @@ if ! grep -q 'ReadWritePaths=/var/lib/jetty9/ /var/cache/jetty9/' "$JETTY_SERVIC
 fi
 
 # Jetty9 Service Update
-sed -i '/^ReadWritePaths=.*\/var\/lib\/jetty9\/.*$/ { /\/var\/cache\/jetty9/! s/.*/& \/var\/cache\/jetty9/ } ; /^# Security/ { N; s/\n\(.*\)\(ReadWritePaths=.*\/var\/lib\/jetty9\/.*\)/\n\1\2\n\1ReadWritePaths=\/var\/lib\/jetty9\/ \/var\/cache\/jetty9/ }' /usr/lib/systemd/system/jetty9.service
+sed -i '/^ReadWritePaths=.*\/var\/lib\/jetty9\/.*$/ { /\/var\/cache\/jetty9\|\/usr\/share\/yangcache/! s/.*/&,\/var\/cache\/jetty9 \/usr\/share\/yangcache/ } ; /^# Security/ { N; s/\n\(.*\)\(ReadWritePaths=.*\/var\/lib\/jetty9\/.*\)/\n\1\2\n\1ReadWritePaths=\/var\/lib\/jetty9\/ \/var\/cache\/jetty9 \/usr\/share\/yangcache/ }' /usr/lib/systemd/system/jetty9.service
 
 # Reload systemd daemon
 systemctl daemon-reload
