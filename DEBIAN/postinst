@@ -2,6 +2,7 @@
 set -e
 
 # Create the yangcache directory and set permissions
+mkdir -p /usr/share/yangcache
 mkdir -p /var/cache/jetty9/webapps/yangcache
 chown -R jetty:jetty /var/cache/jetty9
 chmod -R 755 /var/cache/jetty9/webapps/yangcache

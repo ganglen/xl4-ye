@@ -49,11 +49,9 @@ import java.util.Properties;
 public class RetrieverView extends VerticalLayout {
 
 	public RetrieverView(MainUI ui, VaadinRequest request) {
-
+        String profilePath = "/var/cache/jetty9/profiles.xml";
         setSizeFull();
 
-        String yangcachePath = "/var/cache/jetty9/webapps/yangcache"; 
-        String profilePath = "/var/cache/jetty9/profiles.xml";
         // Properties properties = new Properties();
         // try (InputStream input = new FileInputStream("/etc/excelforeyangexplorer.conf")) {
         //     properties.load(input);
@@ -252,14 +250,9 @@ public class RetrieverView extends VerticalLayout {
             progressBar.setIndeterminate(false);
 
             if (cacheModels.getValue()) {
-              try {
-                String filePath = new File(yangcachePath).toString();
+                String filePath = new File("/var/cache/jetty9/webapps/yangcache").toString();
                 ui.parser.setCacheDirectory(filePath);
-              } catch (IOException ex) {
-                ui.parser.setCacheDirectory(new File("..", "yangcache").toString());
-              }
             }
-                
 
             try (NetconfSession session = ui.client.createSession()) {
                 Map<String, String> schemas = ui.parser.getAvailableSchemas(session);
