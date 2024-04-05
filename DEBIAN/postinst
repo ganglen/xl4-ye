@@ -28,10 +28,23 @@ if ! grep -q 'ReadWritePaths=/var/lib/jetty9/ /var/cache/jetty9/' "$JETTY_SERVIC
 fi
 
 # Jetty9 Service Update
-sed -i '/ReadWritePaths/ {
-    /\/var\/cache\/jetty9\//! { /ReadWritePaths/ s/$/ \/var\/cache\/jetty9\// }
-    /\/usr\/share\/yangcache\//! { /ReadWritePaths/ s/$/ \/usr\/share\/yangcache\// }
-}' /usr/lib/systemd/system/jetty9.service
+# sed -i '/ReadWritePaths/ {
+#     /\/var\/cache\/jetty9\//! { /ReadWritePaths/ s/$/ \/var\/cache\/jetty9\// }
+#     /\/usr\/share\/yangcache\//! { /ReadWritePaths/ s/$/ \/usr\/share\/yangcache\// }
+# }' /usr/lib/systemd/system/jetty9.service
+# Find the location of jetty9.service
+service_location=$(sudo find /etc/systemd/ /lib/systemd/ /usr/lib/systemd/ -type f -name jetty9.service)
+
+# Check if service_location is empty
+if [ -z "$service_location" ]; then
+    echo "jetty9.service not found."
+else
+    # Jetty9 Service Update
+    sed -i '/ReadWritePaths/ {
+        /\/var\/cache\/jetty9\//! { /ReadWritePaths/ s/$/ \/var\/cache\/jetty9\// }
+        /\/usr\/share\/yangcache\//! { /ReadWritePaths/ s/$/ \/usr\/share\/yangcache\/ / }
+    }' "$service_location"
+fi
 
 
 # Reload systemd daemon
