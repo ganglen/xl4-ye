@@ -45,6 +45,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
+import java.security.SecureRandom;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermissions;
 
 /**
  * View for logging in, retrieving and parsing YANG models
@@ -157,26 +162,28 @@ public class RetrieverView extends VerticalLayout {
         hostname.addValueChangeListener(x -> {
             Optional<XMLElement> profile = loadedProfiles.find(
                 String.format("profile[hostname='%s']", hostname.getValue())).findAny();
-            // profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(username::setValue);
-            // profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(password::setValue);
-
-            String encryptionKey = "RetriverViewEncryptionKey";
-            profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(encryptedUsername -> {
-              try {
-                  username.setValue(decryptPassword(encryptedUsername, encryptionKey));
-              } catch (Exception ex) {
-                  ex.printStackTrace();
-              }
-          });
-            profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(encryptedPassword -> {
-                try {
-                    password.setValue(decryptPassword(encryptedPassword, encryptionKey));
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            });
-
-          
+            
+            try {
+              createKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
+              String encryptionKey = readKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
+              profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(encryptedUsername -> {
+                  try {
+                      username.setValue(decryptPassword(encryptedUsername, encryptionKey));
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
+              profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(encryptedPassword -> {
+                  try {
+                      password.setValue(decryptPassword(encryptedPassword, encryptionKey));
+                  } catch (Exception ex) {
+                      ex.printStackTrace();
+                  }
+              });
+            } catch (Exception ex) {
+              profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(username::setValue);
+              profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(password::setValue);
+            }
             profile.ifPresent(p -> remember.setValue(true));
         });
 
@@ -200,7 +207,8 @@ public class RetrieverView extends VerticalLayout {
 
             if (remember.getValue()) {
               try {
-                String encryptionKey = "RetriverViewEncryptionKey";
+                createKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
+                String encryptionKey = readKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
                 String encryptedUsername = encryptPassword(ui.username, encryptionKey);
                 String encryptedPassword = encryptPassword(ui.password, encryptionKey);
                 savedProfiles.createChild("profile")
@@ -329,7 +337,9 @@ public class RetrieverView extends VerticalLayout {
   
   private static String encryptPassword(String password, String encryptionKey) throws Exception {
       SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-      byte[] salt = "RetrieverViewSalt".getBytes();
+      createKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
+      String saltKey = readKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
+      byte[] salt = saltKey.getBytes();
       PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
       SecretKey secretKey = factory.generateSecret(spec);
       SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
@@ -343,7 +353,9 @@ public class RetrieverView extends VerticalLayout {
   private static String decryptPassword(String encryptedPassword, String encryptionKey) throws Exception {
       byte[] encryptedBytes = Base64.getDecoder().decode(encryptedPassword);
       SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-      byte[] salt = "RetrieverViewSalt".getBytes(); // You should use the same salt as used in encryption
+      createKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
+      String saltKey = readKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
+      byte[] salt = saltKey.getBytes(); 
       PBEKeySpec spec = new PBEKeySpec(encryptionKey.toCharArray(), salt, 65536, 256);
       SecretKey secretKey = factory.generateSecret(spec);
       SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
@@ -352,5 +364,20 @@ public class RetrieverView extends VerticalLayout {
       cipher.init(Cipher.DECRYPT_MODE, secret);
       byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
       return new String(decryptedBytes);
+  }
+
+  private static void createKey(String filePath) throws IOException {
+      byte[] key = new byte[32];
+      SecureRandom secureRandom = new SecureRandom();
+      secureRandom.nextBytes(key);
+      if (!Files.exists(Paths.get(filePath))) {
+          Files.write(Paths.get(filePath), key, StandardOpenOption.CREATE);
+      } 
+      Files.setPosixFilePermissions(Paths.get(filePath), PosixFilePermissions.fromString("rw-------"));
+  }
+
+  public static String readKey(String filePath) throws IOException {
+      byte[] keyBytes = Files.readAllBytes(Paths.get(filePath));
+      return new String(keyBytes);
   }
 }
