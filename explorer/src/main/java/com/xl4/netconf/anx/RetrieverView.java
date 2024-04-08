@@ -23,7 +23,6 @@ import com.vaadin.event.ShortcutAction.KeyCode;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.FileResource;
 import com.vaadin.server.Responsive;
-import com.vaadin.server.StreamResource;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinService;
 import com.vaadin.ui.*;
@@ -34,13 +33,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 
 /**
  * View for logging in, retrieving and parsing YANG models
@@ -153,8 +157,26 @@ public class RetrieverView extends VerticalLayout {
         hostname.addValueChangeListener(x -> {
             Optional<XMLElement> profile = loadedProfiles.find(
                 String.format("profile[hostname='%s']", hostname.getValue())).findAny();
-            profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(username::setValue);
-            profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(password::setValue);
+            // profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(username::setValue);
+            // profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(password::setValue);
+
+            String encryptionKey = "RetriverViewEncryptionKey";
+            profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(encryptedUsername -> {
+              try {
+                  username.setValue(decryptPassword(encryptedUsername, encryptionKey));
+              } catch (Exception ex) {
+                  ex.printStackTrace();
+              }
+          });
+            profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(encryptedPassword -> {
+                try {
+                    password.setValue(decryptPassword(encryptedPassword, encryptionKey));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+
+          
             profile.ifPresent(p -> remember.setValue(true));
         });
 
@@ -177,10 +199,21 @@ public class RetrieverView extends VerticalLayout {
                 .findAny().ifPresent(XMLElement::remove);
 
             if (remember.getValue()) {
+              try {
+                String encryptionKey = "RetriverViewEncryptionKey";
+                String encryptedUsername = encryptPassword(ui.username, encryptionKey);
+                String encryptedPassword = encryptPassword(ui.password, encryptionKey);
+                savedProfiles.createChild("profile")
+                        .withTextChild("hostname", hostname.getValue())
+                        .withTextChild("username", encryptedUsername)
+                        .withTextChild("password", encryptedPassword);
+              } catch (Exception ex) {
                 savedProfiles.createChild("profile")
                         .withTextChild("hostname", hostname.getValue())
                         .withTextChild("username", ui.username)
                         .withTextChild("password", ui.password);
+              }
+
             }
 
             try {
@@ -293,4 +326,31 @@ public class RetrieverView extends VerticalLayout {
 		setComponentAlignment(loginPanel, Alignment.MIDDLE_CENTER);
 		setExpandRatio(loginPanel, 1.0f);
 	}
+  
+  private static String encryptPassword(String password, String encryptionKey) throws Exception {
+      SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+      byte[] salt = "RetrieverViewSalt".getBytes();
+      PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
+      SecretKey secretKey = factory.generateSecret(spec);
+      SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
+      
+      Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+      cipher.init(Cipher.ENCRYPT_MODE, secret);
+      byte[] encryptedBytes = cipher.doFinal(password.getBytes());
+      return Base64.getEncoder().encodeToString(encryptedBytes);
+  }
+
+  private static String decryptPassword(String encryptedPassword, String encryptionKey) throws Exception {
+      byte[] encryptedBytes = Base64.getDecoder().decode(encryptedPassword);
+      SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+      byte[] salt = "RetrieverViewSalt".getBytes(); // You should use the same salt as used in encryption
+      PBEKeySpec spec = new PBEKeySpec(encryptionKey.toCharArray(), salt, 65536, 256);
+      SecretKey secretKey = factory.generateSecret(spec);
+      SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
+      
+      Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+      cipher.init(Cipher.DECRYPT_MODE, secret);
+      byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+      return new String(decryptedBytes);
+  }
 }
