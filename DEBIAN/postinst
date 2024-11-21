@@ -4,16 +4,14 @@ set -e
 # Create the yangcache directory and set permissions
 mkdir -p /usr/share/yangcache
 mkdir -p /var/cache/jetty9/webapps/yangcache
-mkdir -p /var/cache/jetty9/webapps/salt
-mkdir -p /var/cache/jetty9/webapps/key
+mkdir -p /var/cache/jetty9/webapps/security
 chown -R jetty:jetty /var/cache/jetty9
 chmod -R 755 /var/cache/jetty9/webapps/yangcache
-chmod -R 600 /var/cache/jetty9/webapps/salt
-chmod -R 600 /var/cache/jetty9/webapps/key
+chmod -R 770 /var/cache/jetty9/webapps/security
 
 # Copy files
 cp -r /usr/share/excelfore-yang-explorer/explorer/target/*.war /var/lib/jetty9/webapps/ROOT.war
-cp -r /usr/share/excelfore-yang-explorer/anc/target/site/apidocs /var/lib/jetty9/webapps/
+cp -r /usr/share/excelfore-yang-explorer/anc/target/reports/apidocs /var/lib/jetty9/webapps/
 
 # Remove existing directory if needed
 if [ -d "/var/lib/jetty9/webapps/root" ]; then
@@ -37,17 +35,20 @@ fi
 #     /\/usr\/share\/yangcache\//! { /ReadWritePaths/ s/$/ \/usr\/share\/yangcache\// }
 # }' /usr/lib/systemd/system/jetty9.service
 # Find the location of jetty9.service
-service_location=$(sudo find /etc/systemd/ /lib/systemd/ /usr/lib/systemd/ -type f -name jetty9.service)
+service_locations=$(find /etc/systemd/ /lib/systemd/ /usr/lib/systemd/ -type f -name jetty9.service)
 
-# Check if service_location is empty
-if [ -z "$service_location" ]; then
+# Check if service_locations is empty
+if [ -z "$service_locations" ]; then
     echo "jetty9.service not found."
 else
     # Jetty9 Service Update
-    sed -i '/ReadWritePaths/ {
-        /\/var\/cache\/jetty9\//! { /ReadWritePaths/ s/$/ \/var\/cache\/jetty9\// }
-        /\/usr\/share\/yangcache\//! { /ReadWritePaths/ s/$/ \/usr\/share\/yangcache\/ / }
-    }' "$service_location"
+    while IFS= read -r service_location; do
+        echo "Updating $service_location ..."
+        sed -i '/ReadWritePaths/ {
+            /\/var\/cache\/jetty9\//! { /ReadWritePaths/ s/$/ \/var\/cache\/jetty9\// }
+            /\/usr\/share\/yangcache\//! { /ReadWritePaths/ s/$/ \/usr\/share\/yangcache\/ / }
+        }' "$service_location" 2>/dev/null
+    done <<< "$service_locations"
 fi
 
 

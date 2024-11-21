@@ -11,7 +11,7 @@ RUN mkdir -p /usr/share/man/man1 && apt update && \
     apt -y --no-install-recommends install openjdk-11-jdk-headless jetty9 maven && \
     cd /src && mvn package javadoc:javadoc && \
     cp /src/explorer/target/*.war /var/lib/jetty9/webapps/ROOT.war && \
-    cp -a /src/anc/target/site/apidocs /var/lib/jetty9/webapps/ && mkdir /usr/share/yangcache && \
+    cp -a /src/anc/target/reports/apidocs /var/lib/jetty9/webapps/ && mkdir /usr/share/yangcache && \
     rm -rf /var/lib/jetty9/webapps/root && cd / && rm -r /src /root/.m2 && \
     apt remove -y openjdk-11-jdk-headless maven && apt -y autoremove
 

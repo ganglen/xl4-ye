@@ -164,18 +164,18 @@ public class RetrieverView extends VerticalLayout {
                 String.format("profile[hostname='%s']", hostname.getValue())).findAny();
             
             try {
-              createKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
-              String encryptionKey = readKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
+              createKey("xl4yangexplorer_key.txt"); 
+              String encryptionKey = readKey("xl4yangexplorer_key.txt"); 
               profile.flatMap(p -> p.getFirst("username")).map(XMLElement::getText).ifPresent(encryptedUsername -> {
                   try {
-                      username.setValue(decryptPassword(encryptedUsername, encryptionKey));
+                      username.setValue(decryptString(encryptedUsername, encryptionKey));
                   } catch (Exception ex) {
                       ex.printStackTrace();
                   }
               });
               profile.flatMap(p -> p.getFirst("password")).map(XMLElement::getText).ifPresent(encryptedPassword -> {
                   try {
-                      password.setValue(decryptPassword(encryptedPassword, encryptionKey));
+                      password.setValue(decryptString(encryptedPassword, encryptionKey));
                   } catch (Exception ex) {
                       ex.printStackTrace();
                   }
@@ -207,10 +207,10 @@ public class RetrieverView extends VerticalLayout {
 
             if (remember.getValue()) {
               try {
-                createKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
-                String encryptionKey = readKey("/var/cache/jetty9/webapps/key/xl4yangexplorer"); 
-                String encryptedUsername = encryptPassword(ui.username, encryptionKey);
-                String encryptedPassword = encryptPassword(ui.password, encryptionKey);
+                createKey("xl4yangexplorer_key.txt"); 
+                String encryptionKey = readKey("xl4yangexplorer_key.txt"); 
+                String encryptedUsername = encryptString(ui.username, encryptionKey);
+                String encryptedPassword = encryptString(ui.password, encryptionKey);
                 savedProfiles.createChild("profile")
                         .withTextChild("hostname", hostname.getValue())
                         .withTextChild("username", encryptedUsername)
@@ -335,49 +335,44 @@ public class RetrieverView extends VerticalLayout {
 		setExpandRatio(loginPanel, 1.0f);
 	}
   
-  private static String encryptPassword(String password, String encryptionKey) throws Exception {
+  private static String encryptString(String password, String encryptionKey) throws Exception {
       SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-      createKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
-      String saltKey = readKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
-      byte[] salt = saltKey.getBytes();
-      PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 256);
+      createKey("xl4yangexplorer_salt.txt"); 
+      byte[] salt = readKey("xl4yangexplorer_salt.txt").getBytes();
+      PBEKeySpec spec = new PBEKeySpec(encryptionKey.toCharArray(), salt, 65536, 256);
       SecretKey secretKey = factory.generateSecret(spec);
       SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
-      
       Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
       cipher.init(Cipher.ENCRYPT_MODE, secret);
       byte[] encryptedBytes = cipher.doFinal(password.getBytes());
       return Base64.getEncoder().encodeToString(encryptedBytes);
   }
 
-  private static String decryptPassword(String encryptedPassword, String encryptionKey) throws Exception {
+  private static String decryptString(String encryptedPassword, String encryptionKey) throws Exception {
       byte[] encryptedBytes = Base64.getDecoder().decode(encryptedPassword);
       SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-      createKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
-      String saltKey = readKey("/var/cache/jetty9/webapps/salt/xl4yangexplorer"); 
-      byte[] salt = saltKey.getBytes(); 
+      createKey("xl4yangexplorer_salt.txt"); 
+      byte[] salt = readKey("xl4yangexplorer_salt.txt").getBytes(); 
       PBEKeySpec spec = new PBEKeySpec(encryptionKey.toCharArray(), salt, 65536, 256);
       SecretKey secretKey = factory.generateSecret(spec);
       SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
-      
       Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
       cipher.init(Cipher.DECRYPT_MODE, secret);
       byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
       return new String(decryptedBytes);
   }
 
-  private static void createKey(String filePath) throws IOException {
-      byte[] key = new byte[32];
-      SecureRandom secureRandom = new SecureRandom();
-      secureRandom.nextBytes(key);
-      if (!Files.exists(Paths.get(filePath))) {
-          Files.write(Paths.get(filePath), key, StandardOpenOption.CREATE);
-      } 
-      Files.setPosixFilePermissions(Paths.get(filePath), PosixFilePermissions.fromString("rw-------"));
+  private static void createKey(String fileName) throws IOException {
+    if (!Files.exists(Paths.get("/var/cache/jetty9/webapps/security/" + fileName))) {
+        byte[] key = new byte[32];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(key);
+        Files.write(Paths.get("/var/cache/jetty9/webapps/security/" + fileName), key, StandardOpenOption.CREATE);
+        Files.setPosixFilePermissions(Paths.get("/var/cache/jetty9/webapps/security/" + fileName), PosixFilePermissions.fromString("rw-rw----"));
+    } 
   }
 
-  public static String readKey(String filePath) throws IOException {
-      byte[] keyBytes = Files.readAllBytes(Paths.get(filePath));
-      return new String(keyBytes);
+  public static String readKey(String fileName) throws IOException {
+    return new String(Files.readAllBytes(Paths.get("/var/cache/jetty9/webapps/security/" + fileName)));
   }
 }

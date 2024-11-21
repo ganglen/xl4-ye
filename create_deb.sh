@@ -24,20 +24,20 @@ else
     cp -r ./explorer/target/explorer-1.0-SNAPSHOT.war ./usr/share/excelfore-yang-explorer/explorer/target/
 fi
 
-if [ -d "./usr/share/excelfore-yang-explorer/anc/target/site" ]; then
-    echo "Directory ./usr/share/excelfore-yang-explorer/anc/target/site already exists."
+if [ -d "./usr/share/excelfore-yang-explorer/anc/target/reports" ]; then
+    echo "Directory ./usr/share/excelfore-yang-explorer/anc/target/reports already exists."
 else
-    mkdir -p ./usr/share/excelfore-yang-explorer/anc/target/site
-    echo "Directory ./usr/share/excelfore-yang-explorer/anc/target/site created."
-    cp -rf ./anc/target/site/apidocs ./usr/share/excelfore-yang-explorer/anc/target/site/
+    mkdir -p ./usr/share/excelfore-yang-explorer/anc/target/reports
+    echo "Directory ./usr/share/excelfore-yang-explorer/anc/target/reports created."
+    cp -rf ./anc/target/reports/apidocs ./usr/share/excelfore-yang-explorer/anc/target/reports/
 fi
 
 cd ../ &&
-dpkg-deb --build excelfore-yang-explorer &&
+dpkg-deb --build excelfore-yang-explorer xl4yangexplorer_1.0.2_amd64.deb &&
 cd excelfore-yang-explorer &&
-mv ../excelfore-yang-explorer.deb . &&
-echo "SUCCESS: excelfore-yang-explorer.deb created" ||
-echo "ERROR: Failed to create excelfore-yang-explorer.deb"
+mv ../xl4yangexplorer_1.0.2_amd64.deb . &&
+echo "SUCCESS: xl4yangexplorer_1.0.2_amd64.deb created" ||
+echo "ERROR: Failed to create xl4yangexplorer_1.0.2_amd64.deb"
 
 # Cleanup
 rm -rf ./usr
